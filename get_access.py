@@ -57,10 +57,15 @@ def get_login_eta(selected_board, title, content, extra_files, hash_code):
 
             # 텍스트 입력
             text_area.clear()
-            text_area.send_keys(content)
+            driver.execute_script("""
+                arguments[0].value = arguments[1];
+                arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+                arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+            """, text_area, content)
             time.sleep(2)
-            text_area.send_keys(hash_code)
+            
             # 해시태그
+            text_area.send_keys(hash_code)
             # 첨부 파일
             upload_input = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='file'].file")))
 

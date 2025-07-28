@@ -25,7 +25,7 @@ def choose_file():
     file = filedialog.askopenfilename(
         title='텍스트 파일을 선택하세요',
         filetypes=(('txt 파일', "*.txt"), ("모든 파일", "*.*")),
-        initialdir=r"/Users/kjb/Desktop/"
+        initialdir=r"/Users/kjb/Desktop/python/PROJECT/AUTO_WRITER/"
     )
 
     if not file:
@@ -50,7 +50,7 @@ def extra_add_file():
             ('이미지 파일', ("*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif")),
             ('모든 파일', "*.*")
         ),
-        initialdir=r"/Users/kjb/Desktop/")
+        initialdir=r"/Users/kjb/Desktop/python/PROJECT/AUTO_WRITER/")
     # 사용자가 선택한 파일 목록
     for file in files:
         file_list_file.insert(END, file)
