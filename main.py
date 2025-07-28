@@ -3,6 +3,7 @@ import tkinter.ttk as ttk
 from tkinter import filedialog
 import tkinter.messagebox as msgbox
 from get_access import get_login_eta
+import threading
 root = Tk()
 root.title('Auto Writer')
 root.resizable(False, False)
@@ -174,19 +175,47 @@ Checkbutton(sedam_frame, text="동아리 게시판", variable=sedam_club).pack(a
 Checkbutton(sedam_frame, text="일반 게시판", variable=sedam_normal).pack(anchor="w")
 '''
 selected_eta = []
-# ==== 제출 ====
+auto_upload = BooleanVar()
+upload_interval_min = IntVar(value=10)
+upload_timer = None
+
+# ===== 제출 함수 =====
 def submit():
     global selected_eta 
     selected_eta = get_selected_eta_boards()
     print("✔ 에타 선택됨:", is_eta.get())
     print("✔ 선택된 게시판들:", selected_eta)
-    '''
-    print("✔ 서담 선택됨:", is_sedam.get())
-    print("  - 동아리 게시판:", sedam_club.get())
-    print("  - 일반 게시판:", sedam_normal.get())
-    '''
     get_login_eta(selected_eta, e.get(), txt.get("1.0", END), file_list_file.get(0, END), hash_code.get())
 
-Button(scrollable_frame, text="올리기", command=submit).pack(pady=20)
+# ===== 자동 업로드 반복 함수 =====
+def auto_upload_loop():
+    global upload_timer  
+    if auto_upload.get():
+        print("🔁 자동 업로드 실행됨")
+        submit()
+        interval = upload_interval_min.get() * 60
+        upload_timer = threading.Timer(interval, auto_upload_loop)
+        upload_timer.start()
 
+# ===== 시작 버튼 핸들러 =====
+def handle_start():
+    if auto_upload.get():
+        print(f"✅ 자동 업로드 시작됨 (간격: {upload_interval_min.get()}분)")
+        auto_upload_loop()
+    else:
+        print("📤 단일 업로드 실행")
+        submit()
+
+# 업로드 옵션
+auto_frame = Frame(scrollable_frame)
+auto_frame.pack(pady=10)
+
+Label(auto_frame, text="업로드 간격 (분): ").pack(side='left')
+interval_combo = ttk.Combobox(auto_frame, width=5, textvariable=upload_interval_min)
+interval_combo['values'] = [0.01, 10, 20, 30, 60, 120, 180]
+interval_combo.current(2)
+interval_combo.pack(side='left', padx=5)
+
+Checkbutton(auto_frame, text="자동 업로드", variable=auto_upload).pack(side='left')
+Button(auto_frame, text="시작", command=handle_start).pack(side='left', padx=10)
 root.mainloop()
