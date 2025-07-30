@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import (
     NoAlertPresentException,
     UnexpectedAlertPresentException,
@@ -48,8 +49,11 @@ def get_login_eta(selected_board, title, content, extra_files, hash_code):
             time.sleep(2)
             # 제목 입력
             title_input = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='title'].title")))
-            title_input.clear()
-            title_input.send_keys(title)
+            driver.execute_script("""
+                arguments[0].value = arguments[1];
+                arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+                arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+            """, title_input, title)
             # 내용
             text_area = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.NAME, "text"))
@@ -111,9 +115,127 @@ def get_login_eta(selected_board, title, content, extra_files, hash_code):
             time.sleep(3)
         else:
             print(f"⚠ 알 수 없는 게시판: {board}")
-if __name__ == "__main__":
-    get_login_eta()
+    driver.quit()
 
+def get_login_sdam(selected_board, title, content, extra_files, hash_code):
+    driver = webdriver.Chrome()
+    driver.get("https://www.ssodam.com")  # 쿠키 적용할 사이트 먼저 접속
+
+    # 쿠키 로드
+    with open("sd_cookies.pkl", "rb") as f:
+        cookies = pickle.load(f)
+        for cookie in cookies:
+            driver.add_cookie(cookie)
+    driver.refresh()
+    time.sleep(3)
+    print("✅ 자동 로그인 성공")
+    # 커뮤니티 처리
+    community_button = driver.find_element(By.LINK_TEXT, "커뮤니티")
+    community_button.click()
+    board_map = {
+        "자유게시판": "/board/3/1",
+        "익게1": "/board/4/1",
+        "익게2": "/board/5/1",
+        "모집공고": "/board/10/1"
+    }
+    print(f"selected_board : {selected_board}")
+    for board in selected_board:
+        print("✔ 선택된 게시판:", board)
+        if board in board_map:
+            url = "https://www.ssodam.com" + board_map[board]
+            driver.get(url)
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(1)
+            print(f"✅ 스크롤 완료")
+            # 1. 버튼 요소가 로드될 때까지 기다림
+            write_btn = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "a.btn.btn-red.write"))
+            )
+
+            # 2. 스크롤로 버튼을 화면에 보이게 함
+            driver.execute_script("arguments[0].scrollIntoView({behavior: 'instant', block: 'center'});", write_btn)
+
+            # 3. 짧게 기다려서 렌더링 시간 줌
+            time.sleep(1)
+
+            # 4. 자바스크립트로 클릭 (겹쳐 있는 요소가 있으면 일반 클릭 실패할 수 있음)
+            driver.execute_script("arguments[0].click();", write_btn)
+            print(f"✅ write_btn 완료")
+            time.sleep(2)
+            title_input = driver.find_element(By.ID, "board-title")
+            driver.execute_script("""
+                arguments[0].value = arguments[1];
+                arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+                arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+            """, title_input, title)
+            text_input = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "div.note-editable"))
+            )
+            
+            driver.execute_script("arguments[0].focus();", text_input)
+            
+            # 텍스트 내용 삽입 (HTML 태그 포함 안 하면 innerText 추천)
+            driver.execute_script("""
+                arguments[0].innerText = arguments[1];
+                arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+                arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+               
+                var el = arguments[0];
+                var range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+
+                var sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            """, text_input, content)
+            driver.execute_script("""
+                arguments[0].innerText += arguments[1];
+                arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+                arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+                
+                var el = arguments[0];
+                var range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+
+                var sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            """, text_input, hash_code)
+            for file_path in extra_files:
+                # 포커스 유지 (중요)
+                driver.execute_script("arguments[0].focus();", text_input)
+
+                # 이미지 업로드 버튼 클릭
+                img_btn = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-event='showImageDialog']"))
+                )
+                img_btn.click()
+                time.sleep(0.5)
+
+                # 파일 input 요소에 경로 전달
+                file_input = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "input.note-image-input[type='file']"))
+                )
+                file_input.send_keys(file_path)
+                time.sleep(1)  # 업로드 여유 시간
+                driver.execute_script("""
+                    var el = arguments[0];
+                    el.focus();
+                    var range = document.createRange();
+                    range.selectNodeContents(el);
+                    range.collapse(false);
+
+                    var sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                """, text_input)
+            submit_btn = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button.submit.btn.btn-default"))
+            )
+            submit_btn.click()
+            time.sleep(1)
 
 
     
