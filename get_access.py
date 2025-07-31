@@ -6,24 +6,28 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import (
     NoAlertPresentException,
     UnexpectedAlertPresentException,
-    TimeoutException
+    TimeoutException,
+    NoSuchElementException
 )
-import pickle
-import time
+from dotenv import load_dotenv
+import os, pickle, time
+load_dotenv()  
 
+eta_id = os.getenv("MY_ETA_ID")
+eta_pw = os.getenv("MY_ETA_PASSWORD")
+sdam_id = os.getenv("MY_SDAM_ID")
+sdam_pw = os.getenv("MY_SDAM_PASSWORD")
 def get_login_eta(selected_board, title, content, extra_files, hash_code):
     driver = webdriver.Chrome()
-    driver.get("https://everytime.kr")  # 쿠키 적용할 사이트 먼저 접속
+    driver.get("https://account.everytime.kr/login")  # 쿠키 적용할 사이트 먼저 접속
 
-    # 쿠키 로드
     with open("et_cookies.pkl", "rb") as f:
         cookies = pickle.load(f)
         for cookie in cookies:
             driver.add_cookie(cookie)
-    # 새로고침하면 로그인된 상태로 전환됨
     driver.refresh()
     time.sleep(3)
-    print("✅ 자동 로그인 성공")
+    print("✅ 자동로그인 성공")
 
     board_menu = driver.find_element(By.LINK_TEXT, "게시판")
     board_menu.click()
@@ -212,7 +216,7 @@ def get_login_sdam(selected_board, title, content, extra_files, hash_code):
                     EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-event='showImageDialog']"))
                 )
                 img_btn.click()
-                time.sleep(0.5)
+                time.sleep(1)
 
                 # 파일 input 요소에 경로 전달
                 file_input = WebDriverWait(driver, 10).until(
@@ -236,6 +240,7 @@ def get_login_sdam(selected_board, title, content, extra_files, hash_code):
             )
             submit_btn.click()
             time.sleep(1)
+    driver.quit()
 
 
     

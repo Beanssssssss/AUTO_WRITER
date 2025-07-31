@@ -22,7 +22,7 @@ main_canvas.configure(yscrollcommand=scrollbar.set)
 scrollable_frame.bind("<Configure>", on_frame_configure)
 main_canvas.pack(side="left", fill="both", expand=True)
 scrollbar.pack(side="right", fill="y")
-def choose_file():
+def choose_file(platform):
     file = filedialog.askopenfilename(
         title='텍스트 파일을 선택하세요',
         filetypes=(('txt 파일', "*.txt"), ("모든 파일", "*.*")),
@@ -30,9 +30,9 @@ def choose_file():
     )
 
     if not file:
-        return  # 선택 안 했을 때 종료
+        return
 
-    if is_eta.get():
+    if platform == 'eta':
         eta_list_file.delete(0, END)
         eta_list_file.insert(END, file)
         with open(file, 'r', encoding='utf-8') as f:
@@ -42,7 +42,7 @@ def choose_file():
             eta_txt.insert(END, content)
             eta_txt.config(state='disabled')
 
-    if is_sdam.get():
+    elif platform == 'sdam':
         sdam_list_file.delete(0, END)
         sdam_list_file.insert(END, file)
         with open(file, 'r', encoding='utf-8') as f:
@@ -52,15 +52,15 @@ def choose_file():
             sdam_txt.insert(END, content)
             sdam_txt.config(state='disabled')
 
-def del_file():
-    if is_eta.get():
+def del_file(platform):
+    if platform == 'eta':
         for index in reversed(eta_list_file.curselection()):
             eta_list_file.delete(index)
-    if is_sdam.get():
+    elif platform == 'sdam':
         for index in reversed(sdam_list_file.curselection()):
             sdam_list_file.delete(index)
 
-def extra_add_file():
+def extra_add_file(platform):
     files = filedialog.askopenfilenames(
         title='이미지 파일을 선택하세요',
         filetypes=(
@@ -70,18 +70,19 @@ def extra_add_file():
         initialdir=r"/Users/kjb/Desktop/python/PROJECT/AUTO_WRITER/"
     )
     for file in files:
-        if is_eta.get():
+        if platform == 'eta':
             eta_file_list_file.insert(END, file)
-        if is_sdam.get():
+        elif platform == 'sdam':
             sdam_file_list_file.insert(END, file)
 
-def extra_del_file():
-    if is_eta.get():
+def extra_del_file(platform):
+    if platform == 'eta':
         for index in reversed(eta_file_list_file.curselection()):
             eta_file_list_file.delete(index)
-    if is_sdam.get():
+    elif platform == 'sdam':
         for index in reversed(sdam_file_list_file.curselection()):
             sdam_file_list_file.delete(index)
+
 # ==== 에타 토글 ====
 def toggle_post_frames():
     # 에타 조건
@@ -183,10 +184,10 @@ eta_file_frame.pack(fill='x', padx=5, pady=5)
 eta_button_frame = Frame(eta_file_frame)
 eta_button_frame.pack(fill='x')
 
-eta_btn_add_file = Button(eta_button_frame, text="파일 선택", command=choose_file)
+eta_btn_add_file = Button(eta_button_frame, text="파일 선택", command=lambda: choose_file('eta'))
 eta_btn_add_file.pack(side='left')
 
-eta_btn_del_file = Button(eta_button_frame, text='선택 삭제', command=del_file)
+eta_btn_del_file = Button(eta_button_frame, text='선택 삭제', command=lambda: del_file('eta'))
 eta_btn_del_file.pack(side='right')
 
 #  리스트 박스를 버튼 아래로 배치
@@ -199,13 +200,15 @@ eta_list_file.pack(side='left', fill='both', expand=True)
 #첨부 파일 프레임
 eta_extra_file_frame = LabelFrame(eta_post_frame, text = "첨부 파일")
 eta_extra_file_frame.pack(fill='x', padx=5, pady=5)
+
 eta_file_button_frame = Frame(eta_extra_file_frame)
 eta_file_button_frame.pack(fill='x')
 
-eta_file_btn_add_file = Button(eta_file_button_frame, text="파일 선택", command=extra_add_file)
+
+eta_file_btn_add_file = Button(eta_file_button_frame, text="파일 선택", command=lambda: extra_add_file('eta'))
 eta_file_btn_add_file.pack(side='left')
 
-eta_file_btn_del_file = Button(eta_file_button_frame, text='선택 삭제', command=extra_del_file)
+eta_file_btn_del_file = Button(eta_file_button_frame, text='선택 삭제', command=lambda: extra_del_file('eta'))
 eta_file_btn_del_file.pack(side='right')
 
 # ✅ 리스트 박스를 버튼 아래로 배치
@@ -250,10 +253,10 @@ sdam_file_frame.pack(fill='x', padx=5, pady=5)
 sdam_button_frame = Frame(sdam_file_frame)
 sdam_button_frame.pack(fill='x')
 
-sdam_btn_add_file = Button(sdam_button_frame, text="파일 선택", command=choose_file)
+sdam_btn_add_file = Button(sdam_button_frame, text="파일 선택", command=lambda: choose_file('sdam'))
 sdam_btn_add_file.pack(side='left')
 
-sdam_btn_del_file = Button(sdam_button_frame, text='선택 삭제', command=del_file)
+sdam_btn_del_file = Button(sdam_button_frame, text='선택 삭제', command=lambda: del_file('sdam'))
 sdam_btn_del_file.pack(side='right')
 
 #  리스트 박스를 버튼 아래로 배치
@@ -269,10 +272,10 @@ sdam_extra_file_frame.pack(fill='x', padx=5, pady=5)
 sdam_file_button_frame = Frame(sdam_extra_file_frame)
 sdam_file_button_frame.pack(fill='x')
 
-sdam_file_btn_add_file = Button(sdam_file_button_frame, text="파일 선택", command=extra_add_file)
+sdam_file_btn_add_file = Button(sdam_file_button_frame, text="파일 선택", command=lambda: extra_add_file('sdam'))
 sdam_file_btn_add_file.pack(side='left')
 
-sdam_file_btn_del_file = Button(sdam_file_button_frame, text='선택 삭제', command=extra_del_file)
+sdam_file_btn_del_file = Button(sdam_file_button_frame, text='선택 삭제', command=lambda: extra_del_file('sdam'))
 sdam_file_btn_del_file.pack(side='right')
 
 # ✅ 리스트 박스를 버튼 아래로 배치
