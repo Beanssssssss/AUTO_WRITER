@@ -39,6 +39,9 @@
 ```bash
 git clone https://github.com/Beanssssssss/AUTO_WRITER.git
 cd AUTO_WRITER
+# 가상 환경 생성 및 활성화 (Windows)
+python -m venv venv
+.\venv\Scripts\activate
 pip install -r requirements.txt
 python get_login_cookies.py
 python main.py
